@@ -13,7 +13,7 @@ findet zur Laufzeit kein einziger Netzwerkzugriff mehr statt – alle Daten
 ## Installation (Proxmox-Host, als root)
 
 ```bash
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
 ```
 
 Das Script fragt interaktiv (whiptail) nach Container-ID, Ressourcen und dem
@@ -27,7 +27,7 @@ erkennt die bestehende LXC, zieht den neuesten Code (`git pull`) und startet
 den Service neu. Dein Fortschritt (SQLite-Datenbank) bleibt dabei erhalten.
 
 ```bash
-bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
 ```
 
 ## Deinstallation
@@ -41,7 +41,7 @@ pct stop <CTID> && pct destroy <CTID>
 Ausfuehrliche Debug-Ausgabe (kompletter `bash -x`-Trace) beim Installieren:
 
 ```bash
-DEBUG=1 bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+DEBUG=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
 ```
 
 Im laufenden Betrieb, direkt im Container:

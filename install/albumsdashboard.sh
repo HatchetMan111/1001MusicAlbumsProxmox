@@ -3,7 +3,7 @@
 # AlbumsDashboard – Proxmox-Community-Script-Style Installer
 #
 # Einzeiler (auf dem Proxmox-Host als root ausfuehren):
-#   bash -c "$(wget -qLO - https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
 #
 # Erstellt einen unprivilegierten Debian-12-LXC-Container, installiert dort
 # AlbumsDashboard und richtet einen systemd-Service ein. Erneuter Aufruf mit
@@ -15,7 +15,7 @@ REPO_URL_DEFAULT="https://github.com/HatchetMan111/1001MusicAlbumsProxmox.git"
 REPO_RAW_DEFAULT="https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main"
 
 # shellcheck disable=SC2154  # "code" wird im Trap selbst per $? gesetzt
-trap 'code=$?; echo; echo -e "\e[1;31m[FEHLER]\e[0m Installation abgebrochen in Zeile $LINENO (Exit-Code $code)."; echo "Letzter Befehl: $BASH_COMMAND"; echo; echo "Fuer eine ausfuehrliche Fehlerausgabe, erneut starten mit:"; echo "  DEBUG=1 bash -c \"\$(wget -qLO - ${REPO_RAW_DEFAULT}/install/albumsdashboard.sh)\""; exit $code' ERR
+trap 'code=$?; echo; echo -e "\e[1;31m[FEHLER]\e[0m Installation abgebrochen in Zeile $LINENO (Exit-Code $code)."; echo "Letzter Befehl: $BASH_COMMAND"; echo; echo "Fuer eine ausfuehrliche Fehlerausgabe, erneut starten mit:"; echo "  DEBUG=1 bash -c \"\$(curl -fsSL ${REPO_RAW_DEFAULT}/install/albumsdashboard.sh)\""; exit $code' ERR
 
 if [[ "${DEBUG:-0}" == "1" ]]; then
   set -x
