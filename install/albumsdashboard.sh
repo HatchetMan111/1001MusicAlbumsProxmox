@@ -3,7 +3,7 @@
 # AlbumsDashboard – Proxmox-Community-Script-Style Installer
 #
 # Einzeiler (auf dem Proxmox-Host als root ausfuehren):
-#   bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+#   bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/1001MusicAlbumsProxmox@main/install/albumsdashboard.sh)"
 #
 # Erstellt einen unprivilegierten Debian-12-LXC-Container, installiert dort
 # AlbumsDashboard und richtet einen systemd-Service ein. Erneuter Aufruf mit
@@ -12,7 +12,11 @@
 set -euo pipefail
 
 REPO_URL_DEFAULT="https://github.com/HatchetMan111/1001MusicAlbumsProxmox.git"
-REPO_RAW_DEFAULT="https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main"
+# jsDelivr statt raw.githubusercontent.com: manche Hosts/IP-Bereiche werden von
+# GitHubs raw-Content-CDN (Fastly) mit 400 "Invalid request" blockiert, obwohl
+# TLS/Verbindung einwandfrei funktionieren. jsDelivr ist ein unabhaengiges CDN
+# und in der Praxis zuverlaessiger erreichbar. REPO_RAW ueberschreibbar per Env.
+REPO_RAW_DEFAULT="https://cdn.jsdelivr.net/gh/HatchetMan111/1001MusicAlbumsProxmox@main"
 
 # shellcheck disable=SC2154  # "code" wird im Trap selbst per $? gesetzt
 trap 'code=$?; echo; echo -e "\e[1;31m[FEHLER]\e[0m Installation abgebrochen in Zeile $LINENO (Exit-Code $code)."; echo "Letzter Befehl: $BASH_COMMAND"; echo; echo "Fuer eine ausfuehrliche Fehlerausgabe, erneut starten mit:"; echo "  DEBUG=1 bash -c \"\$(curl -fsSL ${REPO_RAW_DEFAULT}/install/albumsdashboard.sh)\""; exit $code' ERR

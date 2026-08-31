@@ -13,12 +13,24 @@ findet zur Laufzeit kein einziger Netzwerkzugriff mehr statt – alle Daten
 ## Installation (Proxmox-Host, als root)
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/1001MusicAlbumsProxmox@main/install/albumsdashboard.sh)"
 ```
 
 Das Script fragt interaktiv (whiptail) nach Container-ID, Ressourcen und dem
 Web-UI-Port. Danach ist das Dashboard sofort unter `http://<IP>:8080`
 einsatzbereit – kein weiterer Konfigurationsschritt noetig.
+
+> **Hinweis zur Quelle:** Der Einzeiler laedt ueber [jsDelivr](https://www.jsdelivr.com/)
+> (ein unabhaengiges CDN), nicht direkt von `raw.githubusercontent.com` –
+> letzteres blockiert manche IP-Bereiche mit `400 Bad Request`, obwohl die
+> Verbindung technisch einwandfrei ist. Falls jsDelivr bei dir nicht
+> erreichbar sein sollte, funktioniert ersatzweise:
+> ```bash
+> bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+> ```
+> jsDelivr cached Dateien fuer eine Weile; nach einem Update kann es bis zu
+> einigen Stunden dauern, bis eine Aenderung dort ankommt (Cache laesst sich
+> manuell leeren: https://www.jsdelivr.com/tools/purge).
 
 ## Update
 
@@ -27,7 +39,7 @@ erkennt die bestehende LXC, zieht den neuesten Code (`git pull`) und startet
 den Service neu. Dein Fortschritt (SQLite-Datenbank) bleibt dabei erhalten.
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/1001MusicAlbumsProxmox@main/install/albumsdashboard.sh)"
 ```
 
 ## Deinstallation
@@ -41,7 +53,7 @@ pct stop <CTID> && pct destroy <CTID>
 Ausfuehrliche Debug-Ausgabe (kompletter `bash -x`-Trace) beim Installieren:
 
 ```bash
-DEBUG=1 bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/1001MusicAlbumsProxmox/main/install/albumsdashboard.sh)"
+DEBUG=1 bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/1001MusicAlbumsProxmox@main/install/albumsdashboard.sh)"
 ```
 
 Im laufenden Betrieb, direkt im Container:
