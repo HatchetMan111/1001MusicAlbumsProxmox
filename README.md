@@ -81,6 +81,37 @@ pct exec <CTID> -- journalctl -u albumsdashboard -n 100 --no-pager
   die LXC) + `lib/deploy-albumsdashboard.sh` (laeuft im Container: Python,
   venv, systemd-Service, ufw-Regel, Health-Check)
 
+## Robustheit
+
+- **SQLite im WAL-Modus** mit Busy-Timeout: gleichzeitige Requests/Threads
+  fuehren nicht mehr zu `database is locked`
+- **Redirect-Encoding:** Suchbegriffe mit `&`, `#` usw. werden beim Speichern
+  korrekt zurueck in die URL encodiert (kein zerbrochener Filter mehr)
+- **Rating-Parsing robust:** ungueltige Eingaben (`²`, `3.5`, `9`, Muell)
+  fuehren nicht mehr zu einem 500er, sondern werden ignoriert
+- **Out-of-Range-Seiten** (z. B. Seite 999) leiten auf die letzte gueltige
+  Seite um, statt eine leere Liste zu zeigen
+- **Bewerten ungueltiger IDs** ergibt 404 statt stillschweigendem Insert
+- **LIKE-Escaping:** `%`/`_` in der Suche sind Literale, keine Wildcards
+- **Deploy ohne Datenverlust:** existiert `/opt/albumsdashboard` ohne `.git`
+  (z. B. nach abgebrochenem Erst-Deploy), wird die Fortschritts-DB gesichert
+  und zurueckgeschrieben, statt sie einfach zu loeschen
+
+## UX
+
+- **Autosave ohne Reload** (Progressive Enhancement): Checkbox und Bewertung
+  speichern sofort per `fetch`, die Notiz entprellt; ohne JavaScript
+  funktionieren die klassischen Formulare weiterhin
+- **Redirect-Anker:** nach dem Speichern springt die Seite direkt zur
+  bearbeiteten Karte (mit kurzem Aufleuchten)
+- **Sterne-Anzeige** an jeder bewerteten Karte plus Gehoert-Datum
+- **Kompakte Seitenzahlen-Pagination** mit Fenstern um die aktuelle Seite
+- **Filter-Dropdowns** mit Trefferzahlen und Auto-Submit, Reset-Link
+- **Barrierefreiheit:** ARIA-Labels, Fokus-Ringe fuer Tastaturnutzer,
+  Screenreader-Texte fuer Links, `prefers-reduced-motion`-Unterstuetzung
+- **Sortierung nach bester Bewertung** hinzugefuegt
+- **Mobile:** Filter- und Notizfelder nehmen die volle Breite ein
+
 ## Was bereits getestet wurde
 
 In dieser Umgebung ohne echten Proxmox-Host wurde folgendes verifiziert:
@@ -90,11 +121,18 @@ In dieser Umgebung ohne echten Proxmox-Host wurde folgendes verifiziert:
 - Funktionstest `scripts/smoke_test.py`: Katalog-Import (1001 Alben,
   idempotent bei erneutem Start), Suche/Filter/Sortierung, Fortschritt
   setzen/aendern/zuruecksetzen, Zufallsvorschlag liefert nur offene Alben,
-  Pagination ohne Ueberschneidung, Link-Erzeugung
+  Pagination ohne Ueberschneidung, Link-Erzeugung, Rating-Robustheit,
+  LIKE-Escaping
+- Integrationstest `scripts/http_test.py` (FastAPI TestClient): Redirect-
+  Encoding (`&` in der Suche), Redirect-Anker, Unicode-Rating ohne 500er,
+  404 bei ungueltiger Album-ID, Out-of-Range-Redirect auf letzte Seite,
+  Sterne-Anzeige, Auslieferung der Static-Assets
+- WAL-Verifikation: 25 parallele Schreibzugriffe ohne `database is locked`
 - Echter HTTP-Testlauf gegen den laufenden Uvicorn-Server: Startseite,
   Suche, Zufalls-Redirect, Bewertung ueber das Web-Formular, sowie eine
   gezielte Pruefung, dass im ausgelieferten HTML **keinerlei** Verweis auf
-  einen externen Dienst vorkommt
+  einen externen Dienst vorkommt (Such-Links zu Streaming-Diensten sind
+  bewusst Bestandteil und werden erst im Browser des Nutzers geoeffnet)
 
 ## Was du nach der Installation noch selbst verifizieren solltest
 

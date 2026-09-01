@@ -1,12 +1,16 @@
 :root {
   --bg: #12141a;
   --card: #1c1f27;
+  --card-raised: #242833;
   --text: #eef0f4;
   --muted: #9aa1ac;
   --accent: #ffd234;
   --green: #7cb342;
+  --green-soft: rgba(124, 179, 66, 0.15);
   --danger: #e05d5d;
   --radius: 12px;
+  --border: #333a47;
+  color-scheme: dark;
 }
 
 * { box-sizing: border-box; }
@@ -16,6 +20,14 @@ body {
   font-family: -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--text);
+  line-height: 1.5;
+}
+
+/* Tastatur-Navigation: klar sichtbarer Focus-Ring statt Outline-Wegnahme. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .topbar {
@@ -27,13 +39,18 @@ body {
   border-bottom: 3px solid var(--accent);
   flex-wrap: wrap;
   gap: 8px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .brand { color: var(--text); font-weight: 700; text-decoration: none; font-size: 1.1rem; }
+.brand:hover { color: var(--accent); }
 .tagline { color: var(--muted); font-size: 0.9rem; }
 
-main { max-width: 1100px; margin: 0 auto; padding: 24px; }
+main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
 
+/* --- Statistik --------------------------------------------------------- */
 .stats {
   display: flex;
   align-items: center;
@@ -41,25 +58,41 @@ main { max-width: 1100px; margin: 0 auto; padding: 24px; }
   gap: 20px;
   flex-wrap: wrap;
   margin-bottom: 24px;
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 18px 20px;
 }
-.stat-box { color: var(--text); min-width: 260px; }
-.stat-box strong { color: var(--accent); font-size: 1.3rem; }
-.progress-bar { background: #2a2e38; border-radius: 999px; height: 8px; margin-top: 6px; overflow: hidden; }
-.progress-fill { background: var(--green); height: 100%; }
+.stat-box { color: var(--text); min-width: 260px; flex: 1; }
+.stat-box strong { color: var(--accent); font-size: 1.5rem; }
+.stat-percent { color: var(--green); font-size: 0.95rem; margin-left: 8px; font-weight: 600; }
+.progress-bar { background: #2a2e38; border-radius: 999px; height: 8px; margin-top: 8px; overflow: hidden; }
+.progress-fill {
+  background: linear-gradient(90deg, var(--green), #9ccc65);
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.6s ease;
+}
 
-.btn-primary, .btn-secondary {
+/* --- Buttons ----------------------------------------------------------- */
+.btn-primary, .btn-secondary, .btn-ghost {
   border: none;
   border-radius: 8px;
   padding: 10px 16px;
   font-weight: 600;
+  font-size: 0.95rem;
   cursor: pointer;
   text-decoration: none;
   display: inline-block;
+  transition: filter 0.15s ease, background 0.15s ease;
 }
 .btn-primary { background: var(--accent); color: #1a1a1a; }
+.btn-primary:hover { filter: brightness(1.08); }
 .btn-secondary { background: var(--green); color: #10230a; }
-.btn-primary:hover, .btn-secondary:hover { filter: brightness(1.08); }
+.btn-secondary:hover { filter: brightness(1.08); }
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+.btn-ghost:hover { color: var(--text); border-color: var(--muted); }
 
+/* --- Filter ------------------------------------------------------------ */
 .filter-bar {
   display: flex;
   gap: 10px;
@@ -69,59 +102,195 @@ main { max-width: 1100px; margin: 0 auto; padding: 24px; }
   padding: 14px;
   border-radius: var(--radius);
 }
-.filter-bar input[type="text"] {
+.filter-bar input[type="search"] {
   flex: 1;
-  min-width: 180px;
-  padding: 8px 10px;
+  min-width: 200px;
+  padding: 9px 12px;
   border-radius: 6px;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   background: #10121a;
   color: var(--text);
 }
+.filter-bar input[type="search"]::placeholder { color: var(--muted); }
 .filter-bar select {
-  padding: 8px;
+  padding: 9px 10px;
   border-radius: 6px;
-  border: 1px solid #333;
+  border: 1px solid var(--border);
   background: #10121a;
   color: var(--text);
+  cursor: pointer;
 }
 
 h2 { border-left: 4px solid var(--accent); padding-left: 10px; }
 
 .highlight-card { margin-bottom: 24px; }
+.highlight-card h2 { margin: 0 0 10px; }
 
+/* --- Alben-Karten ------------------------------------------------------ */
 .album-card {
   background: var(--card);
   border-radius: var(--radius);
   overflow: hidden;
   margin-bottom: 16px;
   border-left: 4px solid transparent;
+  transition: background 0.2s ease;
 }
+.album-card:hover { background: var(--card-raised); }
 .album-card.is-listened { border-left-color: var(--green); }
 .album-card.featured { border-left-color: var(--accent); }
 .album-info { padding: 14px 18px; }
-.album-info h3 { margin: 0 0 4px; }
+
+.album-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.album-info h3 { margin: 0 0 4px; font-size: 1.05rem; }
+
 .artist { color: var(--muted); margin: 0 0 10px; }
+.listened-date { color: var(--green); font-size: 0.85rem; }
 
-.rating-form { display: flex; gap: 10px; align-items: center; margin: 10px 0; flex-wrap: wrap; }
-.rating-form input[type="text"] { flex: 1; min-width: 120px; padding: 6px; border-radius: 6px; border: 1px solid #333; background: #10121a; color: var(--text); }
-.rating-form select { padding: 6px; border-radius: 6px; background: #10121a; color: var(--text); border: 1px solid #333; }
-.listened-toggle { display: flex; align-items: center; gap: 6px; color: var(--text); font-size: 0.9rem; }
+.stars { letter-spacing: 2px; font-size: 0.95rem; white-space: nowrap; }
+.star-filled { color: var(--accent); }
+.star-empty { color: var(--border); }
 
-.links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+/* --- Bewertungsformular ------------------------------------------------- */
+.rating-form {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+.rating-form input[type="text"] {
+  flex: 1;
+  min-width: 160px;
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: #10121a;
+  color: var(--text);
+}
+.rating-form select {
+  padding: 7px 8px;
+  border-radius: 6px;
+  background: #10121a;
+  color: var(--text);
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+.listened-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+.listened-toggle:has(input:checked) {
+  background: var(--green-soft);
+  border-color: var(--green);
+  color: #b9d78f;
+}
+.listened-toggle input { accent-color: var(--green); width: 16px; height: 16px; cursor: pointer; }
+
+.save-status { font-size: 0.85rem; color: var(--muted); min-width: 60px; }
+.save-status.ok { color: var(--green); }
+.save-status.error { color: var(--danger); }
+
+/* Nach Redirect-Anker: Karte kurz aufleuchten (mit app.js). */
+.album-card.flash { animation: card-flash 1.5s ease; }
+@keyframes card-flash {
+  0% { box-shadow: 0 0 0 3px var(--accent); }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+
+/* --- Streaming-Links ---------------------------------------------------- */
+.links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
 .link-btn {
   font-size: 0.8rem;
-  padding: 6px 10px;
+  padding: 6px 12px;
   border-radius: 999px;
   background: #2a2e38;
   color: var(--text);
   text-decoration: none;
+  border: 1px solid transparent;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 .link-btn:hover { background: var(--accent); color: #1a1a1a; }
+.link-btn:hover .visually-hidden { color: inherit; }
 
-.pagination { display: flex; justify-content: center; align-items: center; gap: 16px; margin: 24px 0; color: var(--muted); }
-.pagination a { color: var(--accent); text-decoration: none; }
+/* --- Pagination ---------------------------------------------------------- */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin: 28px 0;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.pagination a {
+  color: var(--accent);
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 6px;
+}
+.pagination a:hover { background: var(--card-raised); }
+.pagination .page-current {
+  font-weight: 700;
+  color: var(--text);
+  background: var(--accent);
+  border-radius: 6px;
+  padding: 5px 10px;
+}
+.pagination .ellipsis { color: var(--muted); padding: 0 2px; }
 
-.empty { color: var(--muted); }
+/* --- Leer / Footer -------------------------------------------------------- */
+.empty {
+  text-align: center;
+  color: var(--muted);
+  padding: 48px 16px;
+  background: var(--card);
+  border-radius: var(--radius);
+}
+.empty .btn-ghost { margin-top: 12px; }
 
 footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.8rem; }
+
+/* --- Barrierefreiheit: Screenreader-Only-Labels --------------------------- */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* --- Mobile --------------------------------------------------------------- */
+@media (max-width: 600px) {
+  main { padding: 16px 10px 40px; }
+  .filter-bar input[type="search"] { min-width: 100%; }
+  .rating-form input[type="text"] { min-width: 100%; }
+  .stats { flex-direction: column; align-items: stretch; }
+  .stats .btn-primary { text-align: center; }
+  .album-head h3 { font-size: 1rem; }
+}
+
+/* --- Reduced Motion: Animationen abschalten ------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill { transition: none; }
+  .album-card.flash { animation: none; }
+  * { scroll-behavior: auto !important; }
+}

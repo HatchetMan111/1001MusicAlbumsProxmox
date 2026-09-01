@@ -38,11 +38,28 @@ fi
 
 if [[ -d "$APP_DIR/.git" ]]; then
   log "Bestehende Installation gefunden, aktualisiere Code (git pull)..."
+  # Nutzerdaten (SQLite-Fortschritt) liegen in data/ und bleiben unberuehrt.
   git -C "$APP_DIR" fetch --depth 1 origin "$REPO_BRANCH"
   git -C "$APP_DIR" reset --hard "origin/$REPO_BRANCH"
+elif [[ -e "$APP_DIR" ]]; then
+  # NICHT einfach loeschen: Falls hier (z. B. nach einem abgebrochenen
+  # Erst-Deploy) eine Fortschritts-DB liegt, waere das ein Datenverlust.
+  # Stattdessen: sichern, neu klonen, zurueckschreiben.
+  log "$APP_DIR existiert ohne .git – sichere evtl. Nutzerdaten und klonne neu..."
+  BACKUP_DIR=$(mktemp -d /tmp/albumsdashboard-data.XXXXXX)
+  [[ -d "$APP_DIR/data" ]] && cp -a "$APP_DIR/data" "$BACKUP_DIR/"
+  rm -rf "$APP_DIR"
+  if ! git clone --depth 1 --branch "$REPO_BRANCH" "$REPO_URL" "$APP_DIR"; then
+    cp -a "$BACKUP_DIR/data" "$APP_DIR/" 2>/dev/null || true
+    echo "Klon fehlgeschlagen – gesicherte Nutzerdaten liegen in $BACKUP_DIR" >&2
+    exit 1
+  fi
+  if [[ -d "$BACKUP_DIR/data" ]]; then
+    cp -a "$BACKUP_DIR/data/." "$APP_DIR/data/"
+    rm -rf "$BACKUP_DIR"
+  fi
 else
   log "Klone Repository $REPO_URL ..."
-  rm -rf "$APP_DIR"
   git clone --depth 1 --branch "$REPO_BRANCH" "$REPO_URL" "$APP_DIR"
 fi
 
@@ -62,6 +79,13 @@ log "Richte systemd-Service ein..."
 sed "s/:8080/:${PORT}/" "$APP_DIR/lib/albumsdashboard.service" > /etc/systemd/system/albumsdashboard.service
 systemctl daemon-reload
 systemctl enable albumsdashboard.service >/dev/null 2>&1
+
+# Journal begrenzen: kein unbegrenztes Anwachsen in kleinen LXC-Containern.
+mkdir -p /etc/systemd/journald.conf.d
+cat > /etc/systemd/journald.conf.d/albumsdashboard.conf <<'EOF'
+[Journal]
+MaxRetentionSec=2week
+EOF
 
 log "Starte/aktiviere den Service neu..."
 systemctl restart albumsdashboard.service

@@ -74,9 +74,13 @@ def _seed_catalog(conn: sqlite3.Connection) -> None:
 
 @contextmanager
 def get_conn() -> Iterator[sqlite3.Connection]:
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=5.0)
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
+    # WAL: gleichzeitige Lesezugriffe blockieren Schreiber nicht (kein
+    # 'database is locked' mehr bei ueberlappenden Requests).
+    conn.execute("PRAGMA journal_mode = WAL")
+    conn.execute("PRAGMA busy_timeout = 5000")
     try:
         yield conn
         conn.commit()
@@ -86,13 +90,18 @@ def get_conn() -> Iterator[sqlite3.Connection]:
 
 # --- Abfragen ---------------------------------------------------------
 
-def stats() -> dict[str, int]:
+def stats() -> dict[str, Any]:
     with get_conn() as conn:
         total = conn.execute("SELECT COUNT(*) c FROM catalog").fetchone()["c"]
         listened = conn.execute(
             "SELECT COUNT(*) c FROM progress WHERE listened = 1"
         ).fetchone()["c"]
-        return {"total": total, "listened": listened, "open": total - listened}
+        return {
+            "total": total,
+            "listened": listened,
+            "open": total - listened,
+            "percent": round(listened / total * 100, 1) if total else 0.0,
+        }
 
 
 VALID_SORTS = {
@@ -100,6 +109,7 @@ VALID_SORTS = {
     "year_desc": "c.year DESC, c.artist ASC",
     "artist_asc": "c.artist ASC, c.year ASC",
     "album_asc": "c.album ASC",
+    "rating_desc": "COALESCE(p.rating, 0) DESC, c.year ASC",
 }
 
 
@@ -121,8 +131,15 @@ def list_albums(
         where.append("COALESCE(p.listened, 0) = 0")
 
     if query:
-        where.append("(c.album LIKE ? OR c.artist LIKE ?)")
-        like = f"%{query}%"
+        # ESCAPE: '%', '_' und '\' in der Sucheingabe sind Literal,
+        # keine SQL-LIKE-Wildcards.
+        escaped = (
+            query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        )
+        where.append(
+            "(c.album LIKE ? ESCAPE '\\' OR c.artist LIKE ? ESCAPE '\\')"
+        )
+        like = f"%{escaped}%"
         params.extend([like, like])
 
     where_sql = " AND ".join(where)
@@ -200,8 +217,14 @@ def set_progress(
     listened: bool,
     rating: Optional[int],
     note: str,
-) -> None:
+) -> bool:
+    """Setzt Fortschritt; liefert False, wenn das Album nicht existiert."""
     with get_conn() as conn:
+        exists = conn.execute(
+            "SELECT 1 FROM catalog WHERE id = ?", (catalog_id,)
+        ).fetchone()
+        if not exists:
+            return False
         conn.execute(
             """
             INSERT INTO progress (catalog_id, listened, rating, note, listened_on, updated_at)
@@ -217,3 +240,4 @@ def set_progress(
             """,
             (catalog_id, int(listened), rating, note, int(listened)),
         )
+    return True

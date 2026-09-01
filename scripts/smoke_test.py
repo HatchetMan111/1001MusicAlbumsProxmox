@@ -1,8 +1,9 @@
 """
 Smoke-Test fuer die lokale, eigenstaendige Version von AlbumsDashboard:
 prueft Katalog-Import aus der mitgelieferten TSV-Datei, Filter/Sortierung,
-Fortschritt (gehoert/Bewertung/Notiz), Zufallsvorschlag und die
-netzwerkfreie Link-Erzeugung.
+Fortschritt (gehoert/Bewertung/Notiz), Zufallsvorschlag, die netzwerkfreie
+Link-Erzeugung sowie die Robustheits-Fixes (Rating-Parsing, LIKE-Escaping,
+Redirect-Encoding, Out-of-Range-Seiten).
 """
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from app import db  # noqa: E402
 from app.links import build_links  # noqa: E402
+from app.main import _safe_rating  # noqa: E402
 
 
 def main() -> None:
@@ -24,6 +26,7 @@ def main() -> None:
     assert s["total"] == 1001, f"Erwartet 1001 Alben im Katalog, gefunden {s['total']}"
     assert s["listened"] == 0
     assert s["open"] == 1001
+    assert s["percent"] == 0.0
 
     # Erneuter init_db()-Aufruf darf NICHT erneut importieren (Idempotenz)
     db.init_db()
@@ -46,6 +49,7 @@ def main() -> None:
     s = db.stats()
     assert s["listened"] == 1
     assert s["open"] == 1000
+    assert s["percent"] == 0.1
 
     # -- Filter "listened" / "open" --
     listened_result = db.list_albums(status="listened", page_size=5)
@@ -65,6 +69,20 @@ def main() -> None:
     assert reset["listened"] == 0
     assert reset["rating"] is None
 
+    # -- set_progress auf ungueltige ID liefert False statt stillschweigendem Insert --
+    assert db.set_progress(999999, listened=True, rating=None, note="") is False
+
+    # -- Rating-Sortierung --
+    db.set_progress(radiohead_album["id"], listened=True, rating=5, note="")
+    rated = db.list_albums(sort="rating_desc", page_size=5)
+    assert rated["albums"][0]["id"] == radiohead_album["id"], "5-Sterne-Album sollte bei rating_desc zuerst kommen"
+
+    # -- LIKE-Escaping: Sonderzeichen sind Literale, keine Wildcards --
+    pct = db.list_albums(query="%%", page_size=5)
+    assert pct["total"] == 0, "'%%' darf nicht als Wildcard-Allesmatch wirken"
+    und = db.list_albums(query="__", page_size=5)
+    assert und["total"] == 0, "'__' darf nicht als Wildcard-Allesmatch wirken"
+
     # -- Zufallsvorschlag liefert nur offene Alben --
     for _ in range(20):
         pick = db.random_open_album()
@@ -80,6 +98,16 @@ def main() -> None:
     ids_p2 = {a["id"] for a in page2["albums"]}
     assert ids_p1.isdisjoint(ids_p2), "Seite 1 und 2 duerfen sich nicht ueberschneiden"
 
+    # -- Rating-Parsing-Robustheit (frueher: 500er bei Unicode-Ziffern) --
+    assert _safe_rating("3") == 3
+    assert _safe_rating(" 5 ") == 5
+    assert _safe_rating("2") == 2
+    assert _safe_rating("9") is None, "9 liegt ausserhalb 1-5"
+    assert _safe_rating("") is None
+    assert _safe_rating("abc") is None
+    assert _safe_rating("²") is None, "Unicode-Ziffer darf int() nicht zum Crash bringen"
+    assert _safe_rating("3.5") is None
+
     # -- Link-Erzeugung ist rein lokal (keine Netzwerkaufrufe, nur URL-Bau) --
     links = build_links("Radiohead", "OK Computer")
     assert links["spotify"] == "https://open.spotify.com/search/Radiohead%20OK%20Computer"
@@ -87,7 +115,8 @@ def main() -> None:
 
     print(
         f"SMOKE TEST OK: {s['total']} Alben importiert, Suche/Filter/Sortierung, "
-        f"Fortschritt (inkl. Reset), Zufallsvorschlag und Link-Erzeugung funktionieren wie erwartet."
+        f"Fortschritt (inkl. Reset + ungueltiger ID), Rating-Robustheit, "
+        f"LIKE-Escaping, Zufallsvorschlag und Link-Erzeugung funktionieren."
     )
 
 

@@ -42,16 +42,50 @@ msg() { echo -e "\e[1;33m[AlbumsDashboard]\e[0m $*"; }
 # --- Eingaben (mit sinnvollen Standardwerten, per whiptail abfragbar) ------
 NEXTID=$(pvesh get /cluster/nextid 2>/dev/null || echo 200)
 
+# Validierung: nur Zahlen, plausibles Intervall; Abbruch bei Unsinn statt
+# pct-create mit kaputten Parametern zu fuettern.
+_valid_int() { # $1=Eingabe $2=Min $3=Max $4=Label
+  local v
+  v=$(echo "$1" | tr -cd '0-9')
+  if [[ -z "$v" ]]; then
+    echo "Ungueltige Eingabe fuer $4: '$1'" >&2
+    exit 1
+  fi
+  if (( v < $2 || v > $3 )); then
+    echo "$4 muss zwischen $2 und $3 liegen (bekommen: $v)." >&2
+    exit 1
+  fi
+  echo "$v"
+}
+
 CTID=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox \
   "Container-ID (bestehende ID = Update einer vorhandenen Installation):" 10 60 "$NEXTID" \
   3>&1 1>&2 2>&3) || exit 1
+CTID=$(_valid_int "$CTID" 100 999999999 "Container-ID")
 
 CORES=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "vCPU-Kerne:" 10 60 "1" 3>&1 1>&2 2>&3) || exit 1
+CORES=$(_valid_int "$CORES" 1 64 "vCPU-Kerne")
+
 RAM=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "RAM in MB:" 10 60 "1024" 3>&1 1>&2 2>&3) || exit 1
+RAM=$(_valid_int "$RAM" 256 1048576 "RAM")
+
 DISK=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Disk-Groesse in GB:" 10 60 "6" 3>&1 1>&2 2>&3) || exit 1
+DISK=$(_valid_int "$DISK" 2 1024 "Disk-Groesse")
+
 STORAGE=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Proxmox-Storage fuer Root-Disk:" 10 60 "local-lvm" 3>&1 1>&2 2>&3) || exit 1
+if [[ ! "$STORAGE" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "Ungueltiger Storage-Name: '$STORAGE'" >&2
+  exit 1
+fi
+
 BRIDGE=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Netzwerk-Bridge:" 10 60 "vmbr0" 3>&1 1>&2 2>&3) || exit 1
+if [[ ! "$BRIDGE" =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "Ungueltiger Bridge-Name: '$BRIDGE'" >&2
+  exit 1
+fi
+
 PORT=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Web-UI-Port:" 10 60 "8080" 3>&1 1>&2 2>&3) || exit 1
+PORT=$(_valid_int "$PORT" 1 65535 "Web-UI-Port")
 
 REPO_URL="${REPO_URL:-$REPO_URL_DEFAULT}"
 REPO_RAW="${REPO_RAW:-$REPO_RAW_DEFAULT}"

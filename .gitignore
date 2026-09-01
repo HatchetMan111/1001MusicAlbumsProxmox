@@ -4,3 +4,4 @@ venv/
 /data/
 *.db
 .env
+.venv/

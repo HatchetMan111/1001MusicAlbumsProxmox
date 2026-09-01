@@ -29,3 +29,8 @@ LABELS: dict[str, str] = {
 def build_links(artist: str, album: str) -> dict[str, str]:
     query = urllib.parse.quote(f"{artist} {album}")
     return {service: template.format(q=query) for service, template in SERVICES.items()}
+
+
+def service_label(key: str) -> str:
+    """Anzeigename eines Dienstes; unbekannte Schluessel fallen auf sich selbst zurueck."""
+    return LABELS.get(key, key)

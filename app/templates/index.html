@@ -1,102 +1,149 @@
 {% extends "base.html" %}
+
+{% macro service_buttons(item) %}
+  <div class="links" aria-label="Streaming-Suchlinks">
+    {% for key, url in build_links(item.artist, item.album).items() %}
+      <a class="link-btn link-{{ key }}" href="{{ url }}" target="_blank" rel="noopener noreferrer">
+        {{ service_label(key) }}<span class="visually-hidden">: {{ item.album }} von {{ item.artist }}</span>
+      </a>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
 {% block title %}AlbumsDashboard{% endblock %}
 
 {% block content %}
 
-  <section class="stats">
+  <section class="stats" aria-label="Fortschritt">
     <div class="stat-box">
       <strong>{{ stats.listened }}</strong> / {{ stats.total }} gehoert
-      <div class="progress-bar"><div class="progress-fill" style="width: {{ (stats.listened / stats.total * 100) | round(1) }}%"></div></div>
+      <span class="stat-percent">{{ stats.percent }}&nbsp;%</span>
+      <div class="progress-bar"
+           role="progressbar"
+           aria-valuenow="{{ stats.percent | round(0) | int }}"
+           aria-valuemin="0" aria-valuemax="100"
+           aria-label="{{ stats.listened }} von {{ stats.total }} Alben gehoert">
+        <div class="progress-fill" style="width: {{ stats.percent }}%"></div>
+      </div>
     </div>
-    <a href="/zufall" class="btn-primary">🎲 Zufälliges nächstes Album</a>
+    <a href="/zufall" class="btn-primary">Vorschlag &raquo;</a>
   </section>
 
   {% if highlighted %}
-  <section class="highlight-card">
+  <section class="highlight-card" aria-label="Zufalls-Vorschlag">
     <h2>Vorschlag</h2>
-    <div class="album-card featured">
+    <div class="album-card featured" id="highlight">
       <div class="album-info">
         <h3>{{ highlighted.album }}</h3>
         <p class="artist">{{ highlighted.artist }} {% if highlighted.year %}({{ highlighted.year }}){% endif %}</p>
-        <div class="links">
-          {% for key, url in build_links(highlighted.artist, highlighted.album).items() %}
-            <a class="link-btn link-{{ key }}" href="{{ url }}" target="_blank" rel="noopener">
-              {{ {"spotify": "Spotify", "youtube_music": "YouTube Music", "apple_music": "Apple Music", "deezer": "Deezer", "tidal": "Tidal"}[key] }}
-            </a>
-          {% endfor %}
-        </div>
+        {{ service_buttons(highlighted) }}
       </div>
     </div>
   </section>
   {% endif %}
 
-  <form action="/" method="get" class="filter-bar">
-    <input type="text" name="q" value="{{ q }}" placeholder="Suche nach Interpret oder Titel...">
-    <select name="status">
-      <option value="all" {% if status == "all" %}selected{% endif %}>Alle</option>
-      <option value="open" {% if status == "open" %}selected{% endif %}>Noch offen</option>
-      <option value="listened" {% if status == "listened" %}selected{% endif %}>Gehoert</option>
+  <form action="/" method="get" class="filter-bar" role="search" data-turbo-refresh>
+    <label class="visually-hidden" for="search-q">Suche</label>
+    <input type="search" id="search-q" name="q" value="{{ q }}"
+           placeholder="Interpret oder Titel suchen..." autocomplete="off">
+
+    <label class="visually-hidden" for="filter-status">Filter</label>
+    <select name="status" id="filter-status" data-autosubmit>
+      <option value="all" {% if status == "all" %}selected{% endif %}>Alle ({{ stats.total }})</option>
+      <option value="open" {% if status == "open" %}selected{% endif %}>Noch offen ({{ stats.open }})</option>
+      <option value="listened" {% if status == "listened" %}selected{% endif %}>Gehoert ({{ stats.listened }})</option>
     </select>
-    <select name="sort">
+
+    <label class="visually-hidden" for="filter-sort">Sortierung</label>
+    <select name="sort" id="filter-sort" data-autosubmit>
       <option value="year_asc" {% if sort == "year_asc" %}selected{% endif %}>Jahr aufsteigend</option>
       <option value="year_desc" {% if sort == "year_desc" %}selected{% endif %}>Jahr absteigend</option>
       <option value="artist_asc" {% if sort == "artist_asc" %}selected{% endif %}>Interpret A-Z</option>
       <option value="album_asc" {% if sort == "album_asc" %}selected{% endif %}>Titel A-Z</option>
+      <option value="rating_desc" {% if sort == "rating_desc" %}selected{% endif %}>Beste Bewertung zuerst</option>
     </select>
-    <button type="submit" class="btn-secondary">Filtern</button>
+
+    <noscript><button type="submit" class="btn-secondary">Filtern</button></noscript>
+    {% if q or status != "all" or sort != "year_asc" %}<a href="/" class="btn-ghost">Zur&uuml;cksetzen</a>{% endif %}
   </form>
 
-  <section class="album-list">
+  <section class="album-list" aria-label="Alben">
     {% for album in result.albums %}
-    <div class="album-card {{ 'is-listened' if album.listened else '' }}">
+    <div class="album-card {{ 'is-listened' if album.listened else '' }}" id="album-{{ album.id }}">
       <div class="album-info">
-        <h3>{{ album.album }}</h3>
-        <p class="artist">{{ album.artist }} {% if album.year %}({{ album.year }}){% endif %}</p>
+        <div class="album-head">
+          <h3>{{ album.album }}</h3>
+          {% if album.rating %}
+          <span class="stars" role="img" aria-label="Bewertung: {{ album.rating }} von 5 Sternen">
+            {%- for i in range(1, 6) -%}
+            <span class="{{ 'star-filled' if i <= album.rating else 'star-empty' }}" aria-hidden="true">&starf;</span>
+            {%- endfor -%}
+          </span>
+          {% endif %}
+        </div>
+        <p class="artist">
+          {{ album.artist }} {% if album.year %}({{ album.year }}){% endif %}
+          {% if album.listened and album.listened_on %}
+          <span class="listened-date" title="Gehoert am {{ album.listened_on }}">{{ album.listened_on[:10] }}</span>
+          {% endif %}
+        </p>
 
-        <form action="/rate/{{ album.id }}" method="post" class="rating-form">
+        <form action="/rate/{{ album.id }}" method="post" class="rating-form" data-autosave>
           <input type="hidden" name="status" value="{{ status }}">
           <input type="hidden" name="q" value="{{ q }}">
           <input type="hidden" name="sort" value="{{ sort }}">
           <input type="hidden" name="page" value="{{ result.page }}">
 
-          <label class="listened-toggle">
+          <label class="listened-toggle" title="Als gehoert markieren">
             <input type="checkbox" name="listened" {% if album.listened %}checked{% endif %}>
-            Gehoert
+            <span>Gehoert</span>
           </label>
 
-          <select name="rating">
+          <label class="visually-hidden" for="rating-{{ album.id }}">Bewertung f&uuml;r {{ album.album }}</label>
+          <select name="rating" id="rating-{{ album.id }}">
             <option value="">Keine Bewertung</option>
             {% for i in range(1, 6) %}
-              <option value="{{ i }}" {% if album.rating == i %}selected{% endif %}>{{ i }} ⭐</option>
+            <option value="{{ i }}" {% if album.rating == i %}selected{% endif %}>{{ i }} Stern{{ "e" if i > 1 }}</option>
             {% endfor %}
           </select>
 
-          <input type="text" name="note" placeholder="Notiz (optional)" value="{{ album.note or '' }}">
+          <label class="visually-hidden" for="note-{{ album.id }}">Notiz zu {{ album.album }}</label>
+          <input type="text" name="note" id="note-{{ album.id }}"
+                 placeholder="Notiz (optional)" value="{{ album.note or '' }}">
+
           <button type="submit" class="btn-secondary">Speichern</button>
+          <span class="save-status" role="status" aria-live="polite"></span>
         </form>
 
-        <div class="links">
-          {% for key, url in build_links(album.artist, album.album).items() %}
-            <a class="link-btn link-{{ key }}" href="{{ url }}" target="_blank" rel="noopener">
-              {{ {"spotify": "Spotify", "youtube_music": "YouTube Music", "apple_music": "Apple Music", "deezer": "Deezer", "tidal": "Tidal"}[key] }}
-            </a>
-          {% endfor %}
-        </div>
+        {{ service_buttons(album) }}
       </div>
     </div>
     {% else %}
-    <p class="empty">Keine Alben gefunden.</p>
+    <div class="empty">
+      <p>{% if q %}Keine Alben gefunden f&uuml;r &bdquo;{{ q }}&ldquo;.{% else %}Keine Alben in dieser Ansicht.{% endif %}</p>
+      <a href="/" class="btn-ghost">Alle Alben anzeigen</a>
+    </div>
     {% endfor %}
   </section>
 
   {% if result.pages > 1 %}
-  <nav class="pagination">
+  <nav class="pagination" aria-label="Seitennavigation">
     {% if result.page > 1 %}
-      <a href="/?status={{ status }}&q={{ q }}&sort={{ sort }}&page={{ result.page - 1 }}">← Zurueck</a>
+      <a href="/?status={{ status }}&q={{ q | urlencode }}&sort={{ sort }}&page={{ result.page - 1 }}" rel="prev">&laquo; Zur&uuml;ck</a>
     {% endif %}
-    <span>Seite {{ result.page }} / {{ result.pages }}</span>
+
+    {% for p in page_window %}
+      {% if p is none %}
+        <span class="ellipsis">&hellip;</span>
+      {% elif p == result.page %}
+        <span class="page-current" aria-current="page">{{ p }}</span>
+      {% else %}
+        <a href="/?status={{ status }}&q={{ q | urlencode }}&sort={{ sort }}&page={{ p }}">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+
     {% if result.page < result.pages %}
-      <a href="/?status={{ status }}&q={{ q }}&sort={{ sort }}&page={{ result.page + 1 }}">Weiter →</a>
+      <a href="/?status={{ status }}&q={{ q | urlencode }}&sort={{ sort }}&page={{ result.page + 1 }}" rel="next">Weiter &raquo;</a>
     {% endif %}
   </nav>
   {% endif %}
