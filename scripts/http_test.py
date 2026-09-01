@@ -111,6 +111,21 @@ def main() -> None:
                   "status": "all", "q": "", "sort": "year_asc", "page": "1"},
         )
 
+        # -- Filter-Tabs: prominente Hörstatus-Filter über der Liste --
+        r = client.get("/")
+        assert 'class="filter-tabs"' in r.text
+        assert "Noch offen" in r.text
+        assert 'href="/?status=open' in r.text, "Tab 'Noch offen' muss auf status=open verlinken"
+        r = client.get("/", params={"status": "open"})
+        assert 'filter-tab active' in r.text
+        assert "Keine Alben" not in r.text  # 1000 offene Alben vorhanden
+
+        # -- Cover-Container:clientseitiges Lazy-Loading (Server bleibt offline) --
+        r = client.get("/")
+        assert 'class="album-cover"' in r.text
+        assert "data-artist=" in r.text and "data-album=" in r.text
+        assert "itunes.apple.com" not in r.text, "Server darf keine Cover-URLs ausliefern (Offline-Prinzip)"
+
         # -- Autosave-JS und CSS werden ausgeliefert --
         assert client.get("/static/app.js").status_code == 200
         assert client.get("/static/style.css").status_code == 200

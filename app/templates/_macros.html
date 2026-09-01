@@ -40,8 +40,17 @@
   </section>
 {% endmacro %}
 
+{% macro cover_img(album) %}
+  <div class="album-cover" data-artist="{{ album.artist }}" data-album="{{ album.album }}" data-year="{{ album.year or '' }}">
+    <div class="cover-placeholder" aria-hidden="true">
+      <span class="cover-note-icon">♪</span>
+    </div>
+  </div>
+{% endmacro %}
+
 {% macro album_card(album, status, q, sort, page) %}
   <div class="album-card {{ 'is-listened' if album.listened else '' }}" id="album-{{ album.id }}">
+    {{ cover_img(album) }}
     <div class="album-info">
       <div class="album-head">
         <h3>{{ album.album }}</h3>
@@ -82,6 +91,26 @@
       {{ service_buttons(album) }}
     </div>
   </div>
+{% endmacro %}
+
+{% macro filter_tabs(stats, status, q, sort, base) %}
+  <nav class="filter-tabs" aria-label="Filter: Hörstatus">
+    <a href="{{ base }}?status=all&q={{ q | urlencode }}&sort={{ sort }}"
+       class="filter-tab {{ 'active' if status == 'all' else '' }}">
+      <span class="tab-label">Alle</span>
+      <span class="tab-count">{{ stats.total }}</span>
+    </a>
+    <a href="{{ base }}?status=open&q={{ q | urlencode }}&sort={{ sort }}"
+       class="filter-tab {{ 'active' if status == 'open' else '' }}">
+      <span class="tab-label">Noch offen</span>
+      <span class="tab-count">{{ stats.open }}</span>
+    </a>
+    <a href="{{ base }}?status=listened&q={{ q | urlencode }}&sort={{ sort }}"
+       class="filter-tab {{ 'active' if status == 'listened' else '' }}">
+      <span class="tab-label">Gehört</span>
+      <span class="tab-count">{{ stats.listened }}</span>
+    </a>
+  </nav>
 {% endmacro %}
 
 {% macro pagination(result, base, status, q, sort, window) %}

@@ -99,6 +99,14 @@ pct exec <CTID> -- journalctl -u albumsdashboard -n 100 --no-pager
 
 ## UX
 
+- **Filter-Tabs über der Liste:** „Alle / Noch offen / Gehört" mit
+  Trefferzahlen – ein Klick zeigt z. B. nur die Alben, die man noch
+  nicht gehört hat
+- **Album-Cover** neben jeder Karte: rein clientseitig per
+  iTunes-Artwork-CDN geladen (Lazy-Loading, LocalStorage-Cache,
+  Noten-Platzhalter als Fallback). Der Server bleibt vollständig
+  offline – er liefert keine Cover-URLs aus, der Browser lädt sie
+  direkt vom CDN (genau wie die Streaming-Suchlinks)
 - **Eigene Rubrik „Gehörte Alben"** (`/gehoert`): Chronologie mit
   „Zuletzt gehört zuerst", Bewertung, Notiz und Gehört-Datum, durchsuchbar
   und sortierbar – direkt über die Navigation oben erreichbar

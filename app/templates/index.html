@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import stats_bar, album_card, pagination, service_buttons %}
+{% from "_macros.html" import stats_bar, album_card, pagination, service_buttons, filter_tabs, cover_img %}
 
 {% block title %}AlbumsDashboard – Alle Alben{% endblock %}
 
@@ -11,6 +11,7 @@
   <section class="highlight-card" aria-label="Zufalls-Vorschlag">
     <h2>Vorschlag</h2>
     <div class="album-card featured" id="highlight">
+      {{ cover_img(highlighted) }}
       <div class="album-info">
         <h3>{{ highlighted.album }}</h3>
         <p class="artist">{{ highlighted.artist }} {% if highlighted.year %}({{ highlighted.year }}){% endif %}</p>
@@ -20,17 +21,13 @@
   </section>
   {% endif %}
 
+  {{ filter_tabs(stats, status, q, sort, "/") }}
+
   <form action="/" method="get" class="filter-bar" role="search">
+    <input type="hidden" name="status" value="{{ status }}">
     <label class="visually-hidden" for="search-q">Suche</label>
     <input type="search" id="search-q" name="q" value="{{ q }}"
            placeholder="Interpret oder Titel suchen…" autocomplete="off">
-
-    <label class="visually-hidden" for="filter-status">Filter</label>
-    <select name="status" id="filter-status" data-autosubmit>
-      <option value="all" {% if status == "all" %}selected{% endif %}>Alle ({{ stats.total }})</option>
-      <option value="open" {% if status == "open" %}selected{% endif %}>Noch offen ({{ stats.open }})</option>
-      <option value="listened" {% if status == "listened" %}selected{% endif %}>Gehört ({{ stats.listened }})</option>
-    </select>
 
     <label class="visually-hidden" for="filter-sort">Sortierung</label>
     <select name="sort" id="filter-sort" data-autosubmit>

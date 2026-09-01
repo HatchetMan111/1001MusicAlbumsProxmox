@@ -129,4 +129,75 @@
       setTimeout(function () { target.classList.remove("flash"); }, 1500);
     }
   }
+
+  /* -----------------------------------------------------------------
+   * Album-Cover (rein clientseitig, der Server bleibt offline):
+   * iTunes-Artwork-CDN, gecacht im LocalStorage; Fallback = Noten-Platzhalter.
+   * Lazy-Load per IntersectionObserver, damit nur sichtbare Covers angefragt
+   * werden (1001 Alben auf 26 Seiten, 40 pro Seite). */
+  var COVER_KEY = "albumcover:";
+  var coverObserver = ("IntersectionObserver" in window)
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (entry.isIntersecting) {
+            coverObserver.unobserve(entry.target);
+            loadCover(entry.target);
+          }
+        });
+      }, { rootMargin: "200px" })
+    : null;
+
+  function lookupCover(artist, album, callback) {
+    var key = COVER_KEY + artist + "|" + album;
+    try {
+      var cached = localStorage.getItem(key);
+      if (cached !== null) {
+        callback(cached === "" ? null : cached);
+        return;
+      }
+    } catch (e) { /* LocalStorage nicht verfügbar -> direkt laden */ }
+
+    var url = "https://itunes.apple.com/search?term=" +
+      encodeURIComponent(artist + " " + album) +
+      "&entity=album&limit=5";
+    fetch(url)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var art = null;
+        var dl = (data && data.results) ? data.results : [];
+        for (var i = 0; i < dl.length; i++) {
+          var cand = dl[i] && dl[i].artworkUrl100;
+          if (cand) { art = cand.replace("100x100", "300x300"); break; }
+        }
+        try { localStorage.setItem(key, art || ""); } catch (e) {}
+        callback(art);
+      })
+      .catch(function () {
+        try { localStorage.setItem(key, ""); } catch (e) {}
+        callback(null);
+      });
+  }
+
+  function loadCover(container) {
+    var artist = container.getAttribute("data-artist");
+    var album = container.getAttribute("data-album");
+    if (!artist || !album) return;
+    lookupCover(artist, album, function (url) {
+      if (!url) return; /* Platzhalter bleibt */
+      var img = document.createElement("img");
+      img.src = url;
+      img.alt = "Cover von " + album;
+      img.loading = "lazy";
+      img.referrerPolicy = "no-referrer";
+      img.onload = function () { container.classList.add("cover-loaded"); };
+      container.innerHTML = "";
+      container.appendChild(img);
+    });
+  }
+
+  var coverContainers = document.querySelectorAll(".album-cover[data-artist]");
+  coverContainers.forEach(function (c) {
+    if (coverObserver) coverObserver.observe(c);
+    else loadCover(c);
+  });
 })();
