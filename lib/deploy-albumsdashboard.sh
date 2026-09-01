@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
 # deploy-albumsdashboard.sh
-# Laeuft INNERHALB der LXC (wird von install/albumsdashboard.sh per
+# Läuft INNERHALB der LXC (wird von install/albumsdashboard.sh per
 # `pct exec` aufgerufen). Installiert Python, klont das App-Repo,
 # richtet venv + systemd-Service + Firewall ein und prueft am Ende
 # ob die Web-UI antwortet.
 #
-# Idempotent: kann mehrfach ausgefuehrt werden (z. B. fuer Updates).
+# Idempotent: kann mehrfach ausgefuehrt werden (z. B. für Updates).
 # ---------------------------------------------------------------------------
 set -euo pipefail
 trap 'echo; echo "[FEHLER] deploy-albumsdashboard.sh ist in Zeile $LINENO fehlgeschlagen (Exit-Code $?)."; echo "Letzter Befehl: $BASH_COMMAND"; echo "--- Journal (letzte 60 Zeilen) ---"; journalctl -u albumsdashboard --no-pager -n 60 2>/dev/null || true; exit 1' ERR
@@ -24,7 +24,7 @@ fi
 
 log() { echo -e "\e[1;33m[deploy]\e[0m $*"; }
 
-log "Aktualisiere Paketquellen und installiere Abhaengigkeiten..."
+log "Aktualisiere Paketquellen und installiere Abhängigkeiten..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq --no-install-recommends \
@@ -44,7 +44,7 @@ if [[ -d "$APP_DIR/.git" ]]; then
 elif [[ -e "$APP_DIR" ]]; then
   # NICHT einfach loeschen: Falls hier (z. B. nach einem abgebrochenen
   # Erst-Deploy) eine Fortschritts-DB liegt, waere das ein Datenverlust.
-  # Stattdessen: sichern, neu klonen, zurueckschreiben.
+  # Stattdessen: sichern, neu klonen, zurückschreiben.
   log "$APP_DIR existiert ohne .git – sichere evtl. Nutzerdaten und klonne neu..."
   BACKUP_DIR=$(mktemp -d /tmp/albumsdashboard-data.XXXXXX)
   [[ -d "$APP_DIR/data" ]] && cp -a "$APP_DIR/data" "$BACKUP_DIR/"
@@ -90,7 +90,7 @@ EOF
 log "Starte/aktiviere den Service neu..."
 systemctl restart albumsdashboard.service
 
-log "Oeffne Firewall-Port ${PORT}/tcp (ufw)..."
+log "Öffne Firewall-Port ${PORT}/tcp (ufw)..."
 ufw allow "${PORT}/tcp" >/dev/null 2>&1 || true
 
 log "Warte auf den Start des Dienstes..."
@@ -102,14 +102,14 @@ for _try in $(seq 1 15); do
 done
 
 if ! systemctl is-active --quiet albumsdashboard.service; then
-  echo "[FEHLER] Service ist nicht aktiv. Vollstaendiger Status:"
+  echo "[FEHLER] Service ist nicht aktiv. Vollständiger Status:"
   systemctl status albumsdashboard.service --no-pager -l || true
   echo "--- journalctl -u albumsdashboard (letzte 80 Zeilen) ---"
   journalctl -u albumsdashboard --no-pager -n 80 || true
   exit 1
 fi
 
-log "Pruefe HTTP-Antwort auf localhost:${PORT} ..."
+log "Prüfe HTTP-Antwort auf localhost:${PORT} ..."
 HTTP_OK=0
 for _try in $(seq 1 15); do
   if curl -fsS "http://127.0.0.1:${PORT}/healthz" >/dev/null 2>&1; then

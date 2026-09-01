@@ -1,7 +1,7 @@
 """
-Smoke-Test fuer die lokale, eigenstaendige Version von AlbumsDashboard:
+Smoke-Test für die lokale, eigenstaendige Version von AlbumsDashboard:
 prueft Katalog-Import aus der mitgelieferten TSV-Datei, Filter/Sortierung,
-Fortschritt (gehoert/Bewertung/Notiz), Zufallsvorschlag, die netzwerkfreie
+Fortschritt (gehört/Bewertung/Notiz), Zufallsvorschlag, die netzwerkfreie
 Link-Erzeugung sowie die Robustheits-Fixes (Rating-Parsing, LIKE-Escaping,
 Redirect-Encoding, Out-of-Range-Seiten).
 """
@@ -57,19 +57,19 @@ def main() -> None:
     open_result = db.list_albums(status="open", page_size=5)
     assert all(a["id"] != radiohead_album["id"] for a in open_result["albums"])
 
-    # -- Fortschritt aendern (z. B. Bewertung korrigieren) darf listened_on nicht verlieren --
+    # -- Fortschritt ändern (z. B. Bewertung korrigieren) darf listened_on nicht verlieren --
     db.set_progress(radiohead_album["id"], listened=True, rating=4, note="Doch nur 4 Sterne")
     updated2 = db.get_album(radiohead_album["id"])
     assert updated2["rating"] == 4
     assert updated2["listened_on"] == updated["listened_on"], "listened_on sollte beim Update erhalten bleiben"
 
-    # -- Als "nicht gehoert" zuruecksetzen --
+    # -- Als "nicht gehört" zurücksetzen --
     db.set_progress(radiohead_album["id"], listened=False, rating=None, note="")
     reset = db.get_album(radiohead_album["id"])
     assert reset["listened"] == 0
     assert reset["rating"] is None
 
-    # -- set_progress auf ungueltige ID liefert False statt stillschweigendem Insert --
+    # -- set_progress auf ungültige ID liefert False statt stillschweigendem Insert --
     assert db.set_progress(999999, listened=True, rating=None, note="") is False
 
     # -- Rating-Sortierung --
@@ -96,13 +96,13 @@ def main() -> None:
     assert page1["pages"] == 26, f"Erwartet 26 Seiten a 40, bekommen {page1['pages']}"
     ids_p1 = {a["id"] for a in page1["albums"]}
     ids_p2 = {a["id"] for a in page2["albums"]}
-    assert ids_p1.isdisjoint(ids_p2), "Seite 1 und 2 duerfen sich nicht ueberschneiden"
+    assert ids_p1.isdisjoint(ids_p2), "Seite 1 und 2 dürfen sich nicht überschneiden"
 
-    # -- Rating-Parsing-Robustheit (frueher: 500er bei Unicode-Ziffern) --
+    # -- Rating-Parsing-Robustheit (früher: 500er bei Unicode-Ziffern) --
     assert _safe_rating("3") == 3
     assert _safe_rating(" 5 ") == 5
     assert _safe_rating("2") == 2
-    assert _safe_rating("9") is None, "9 liegt ausserhalb 1-5"
+    assert _safe_rating("9") is None, "9 liegt außerhalb 1-5"
     assert _safe_rating("") is None
     assert _safe_rating("abc") is None
     assert _safe_rating("²") is None, "Unicode-Ziffer darf int() nicht zum Crash bringen"
@@ -115,7 +115,7 @@ def main() -> None:
 
     print(
         f"SMOKE TEST OK: {s['total']} Alben importiert, Suche/Filter/Sortierung, "
-        f"Fortschritt (inkl. Reset + ungueltiger ID), Rating-Robustheit, "
+        f"Fortschritt (inkl. Reset + ungültiger ID), Rating-Robustheit, "
         f"LIKE-Escaping, Zufallsvorschlag und Link-Erzeugung funktionieren."
     )
 

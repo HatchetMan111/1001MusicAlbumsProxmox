@@ -1,6 +1,6 @@
 """
 AlbumsDashboard - lokale, eigenstaendige Checkliste zu "1001 Albums You Must
-Hear Before You Die". Keine externe API, keine Cloud-Abhaengigkeit.
+Hear Before You Die". Keine externe API, keine Cloud-Abhängigkeit.
 
 Start: uvicorn app.main:app --host 0.0.0.0 --port 8080
 """
@@ -12,7 +12,7 @@ from typing import Any, Optional
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -26,6 +26,8 @@ templates.env.globals["service_label"] = service_label
 
 VALID_STATUS = {"all", "open", "listened"}
 VALID_SORTS_UI = {"year_asc", "year_desc", "artist_asc", "album_asc", "rating_desc"}
+# "recent": zuletzt gehört zuerst - nur für die Gehört-Rubrik sinnvoll.
+GEHOERT_SORTS = {"year_asc", "year_desc", "artist_asc", "album_asc", "rating_desc", "recent"}
 
 
 @asynccontextmanager
@@ -41,7 +43,7 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 def _index_params(
     status: str, q: str, sort: str, page: int, highlight: Optional[int] = None
 ) -> str:
-    """Query-Parameter fuer Redirects, korrekt encodiert (&, # etc. in q sind sicher)."""
+    """Query-Parameter für Redirects, korrekt encodiert (&, # etc. in q sind sicher)."""
     params: dict[str, Any] = {"status": status, "q": q, "sort": sort, "page": page}
     if highlight is not None:
         params["highlight"] = highlight
@@ -49,7 +51,7 @@ def _index_params(
 
 
 def _safe_rating(rating: str) -> Optional[int]:
-    """Robustes Rating-Parsing: '2' -> 2, '²'/'3.5'/'Müll'/'9' -> None (kein 500er)."""
+    """Robustes Rating-Parsing: '2' -> 2, '²'/'3.5'/'Muell'/'9' -> None (kein 500er)."""
     try:
         value = int(rating.strip())
     except (ValueError, AttributeError):
@@ -59,8 +61,8 @@ def _safe_rating(rating: str) -> Optional[int]:
 
 def _page_window(current: int, pages: int) -> list[Optional[int]]:
     """
-    Kompakte Seitenliste fuer die Pagination: erste/letzte Seiten plus ein
-    Fenster um die aktuelle Seite; None steht fuer eine Auslassung ("...").
+    Kompakte Seitenliste für die Pagination: erste/letzte Seiten plus ein
+    Fenster um die aktuelle Seite; None steht für eine Auslassung ("...").
     """
     if pages <= 7:
         return list(range(1, pages + 1))
@@ -74,6 +76,12 @@ def _page_window(current: int, pages: int) -> list[Optional[int]]:
         window.append(p)
         prev = p
     return window
+
+
+def _no_store(response: HTMLResponse) -> HTMLResponse:
+    """Browser-Cache für dynamische Seiten abschalten (veraltete 'Gehört'-Stände)."""
+    response.headers["Cache-Control"] = "no-store"
+    return response
 
 
 @app.get("/healthz")
@@ -98,15 +106,15 @@ def index(
 
     result = db.list_albums(status=status, query=q, sort=sort, page=page)
 
-    # Seite jenseits des Maximums (z. B. nach Filterwechsel per Zurueck-Button):
-    # auf die letzte gueltige Seite umleiten statt eine leere Liste zu zeigen.
+    # Seite jenseits des Maximums (z. B. nach Filterwechsel per Zurück-Button):
+    # auf die letzte gültige Seite umleiten statt eine leere Liste zu zeigen.
     if result["total"] > 0 and page > result["pages"]:
         query = _index_params(status, q, sort, result["pages"], highlight)
         return RedirectResponse(url=f"/?{query}", status_code=303)
 
     highlighted = db.get_album(highlight) if highlight else None
 
-    return templates.TemplateResponse(
+    return _no_store(templates.TemplateResponse(
         "index.html",
         {
             "request": request,
@@ -118,7 +126,38 @@ def index(
             "highlighted": highlighted,
             "page_window": _page_window(result["page"], result["pages"]),
         },
-    )
+    ))
+
+
+@app.get("/gehoert", response_class=HTMLResponse)
+def gehoert_page(
+    request: Request,
+    q: str = "",
+    sort: str = "recent",
+    page: int = 1,
+) -> HTMLResponse:
+    """Rubrik 'Gehörte Alben': Chronologie mit Bewertung, Notiz und Gehört-Datum."""
+    if sort not in GEHOERT_SORTS:
+        sort = "recent"
+    page = max(page, 1)
+
+    result = db.list_albums(status="listened", query=q, sort=sort, page=page)
+
+    if result["total"] > 0 and page > result["pages"]:
+        query = urlencode({"q": q, "sort": sort, "page": result["pages"]})
+        return RedirectResponse(url=f"/gehoert?{query}", status_code=303)
+
+    return _no_store(templates.TemplateResponse(
+        "gehoert.html",
+        {
+            "request": request,
+            "stats": db.stats(),
+            "result": result,
+            "q": q,
+            "sort": sort,
+            "page_window": _page_window(result["page"], result["pages"]),
+        },
+    ))
 
 
 @app.get("/zufall")
@@ -155,6 +194,24 @@ async def rate_album(
         status = "all"
     if sort not in VALID_SORTS_UI:
         sort = "year_asc"
+
+    # JS-Autosave: JSON-Antwort mit dem tatsaechlichen DB-Stand zurückgeben,
+    # damit die UI verlässlich spiegelt, was gespeichert wurde.
+    if request.headers.get("accept", "").startswith("application/json"):
+        album = db.get_album(catalog_id)
+        return JSONResponse(
+            content={
+                "ok": True,
+                "id": catalog_id,
+                "listened": bool(album["listened"]) if album else False,
+                "rating": album["rating"] if album else None,
+                "note": album["note"] if album else "",
+                "listened_on": album["listened_on"] if album else None,
+                "stats": db.stats(),
+            },
+            headers={"Cache-Control": "no-store"},
+        )
+
     query = _index_params(status, q, sort, max(page, 1))
     # Anker => Browser scrollt nach dem Speichern direkt zur gespeicherten Karte.
     return RedirectResponse(url=f"/?{query}#album-{catalog_id}", status_code=303)

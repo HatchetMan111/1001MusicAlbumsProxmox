@@ -48,6 +48,38 @@ body {
 .brand:hover { color: var(--accent); }
 .tagline { color: var(--muted); font-size: 0.9rem; }
 
+/* --- Haupt-Navigation (Alle / Gehörte) --------------------------------- */
+.mainnav { display: flex; gap: 4px; margin-left: auto; margin-right: 12px; }
+.navlink {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 8px;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.navlink:hover { color: var(--text); background: var(--card-raised); }
+.navlink.active { color: var(--accent); background: var(--card-raised); }
+
+/* --- Gehört-Rubrik ------------------------------------------------------ */
+.gehoert-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.gehoert-header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+  border-left: 4px solid var(--green);
+  padding-left: 12px;
+}
+.gehoert-sub { color: var(--muted); margin: 6px 0 0; }
+.gehoert-sub a { color: var(--accent); }
+
 main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 48px; }
 
 /* --- Statistik --------------------------------------------------------- */
@@ -281,6 +313,10 @@ footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.8r
 /* --- Mobile --------------------------------------------------------------- */
 @media (max-width: 600px) {
   main { padding: 16px 10px 40px; }
+  .topbar { padding: 12px 14px; }
+  .mainnav { margin-left: 0; width: 100%; }
+  .mainnav .navlink { flex: 1; text-align: center; }
+  .tagline { display: none; }
   .filter-bar input[type="search"] { min-width: 100%; }
   .rating-form input[type="text"] { min-width: 100%; }
   .stats { flex-direction: column; align-items: stretch; }

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import stats_bar, album_card, pagination, service_buttons, stars_span %}
+
+{% block title %}Gehörte Alben – AlbumsDashboard{% endblock %}
+
+{% block content %}
+
+  {{ stats_bar(stats) }}
+
+  <section class="gehoert-header" aria-labelledby="gehoert-title">
+    <div>
+      <h1 id="gehoert-title">Gehörte Alben</h1>
+      <p class="gehoert-sub">
+        {{ stats.listened }} von {{ stats.total }} Albums gehört
+        ({{ stats.percent }}&nbsp;%) – <a href="/">zurück zu allen Alben</a>
+      </p>
+    </div>
+  </section>
+
+  <form action="/gehoert" method="get" class="filter-bar" role="search">
+    <label class="visually-hidden" for="search-q">Suche in gehörten Alben</label>
+    <input type="search" id="search-q" name="q" value="{{ q }}"
+           placeholder="In gehörten Alben suchen…" autocomplete="off">
+
+    <label class="visually-hidden" for="filter-sort">Sortierung</label>
+    <select name="sort" id="filter-sort" data-autosubmit>
+      <option value="recent" {% if sort == "recent" %}selected{% endif %}>Zuletzt gehört</option>
+      <option value="rating_desc" {% if sort == "rating_desc" %}selected{% endif %}>Beste Bewertung</option>
+      <option value="year_asc" {% if sort == "year_asc" %}selected{% endif %}>Jahr aufsteigend</option>
+      <option value="year_desc" {% if sort == "year_desc" %}selected{% endif %}>Jahr absteigend</option>
+      <option value="artist_asc" {% if sort == "artist_asc" %}selected{% endif %}>Interpret A–Z</option>
+      <option value="album_asc" {% if sort == "album_asc" %}selected{% endif %}>Titel A–Z</option>
+    </select>
+
+    <noscript><button type="submit" class="btn-secondary">Filtern</button></noscript>
+    {% if q or sort != "recent" %}<a href="/gehoert" class="btn-ghost">Zurücksetzen</a>{% endif %}
+  </form>
+
+  <section class="album-list" aria-label="Gehörte Alben">
+    {% for album in result.albums %}
+      {{ album_card(album, "listened", q, sort, result.page) }}
+    {% else %}
+    <div class="empty">
+      <p>{% if q %}Keine gehörten Alben gefunden für „{{ q }}“.{% else %}Noch nichts als gehört markiert – viel Spaß beim Hören!{% endif %}</p>
+      <a href="/zufall" class="btn-ghost">Zufälliges Album vorschlagen</a>
+    </div>
+    {% endfor %}
+  </section>
+
+  {{ pagination(result, "/gehoert", "listened", q, sort, page_window) }}
+
+{% endblock %}

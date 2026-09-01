@@ -1,6 +1,6 @@
 """
-Erzeugt pro Album Such-Links fuer gaengige Streaming-Dienste – rein lokal,
-ohne jeglichen Netzwerkzugriff und ohne Abhaengigkeit von einem externen
+Erzeugt pro Album Such-Links für gaengige Streaming-Dienste – rein lokal,
+ohne jeglichen Netzwerkzugriff und ohne Abhängigkeit von einem externen
 Dienst. Es werden bewusst nur Such-URLs gebaut (kein Abgleich gegen eine
 Alben-Datenbank eines Drittanbieters), damit die App zur Laufzeit komplett
 offline-faehig bleibt.
@@ -32,5 +32,5 @@ def build_links(artist: str, album: str) -> dict[str, str]:
 
 
 def service_label(key: str) -> str:
-    """Anzeigename eines Dienstes; unbekannte Schluessel fallen auf sich selbst zurueck."""
+    """Anzeigename eines Dienstes; unbekannte Schluessel fallen auf sich selbst zurück."""
     return LABELS.get(key, key)

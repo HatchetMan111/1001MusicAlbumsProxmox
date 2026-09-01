@@ -1,10 +1,10 @@
 """
 AlbumsDashboard - SQLite-Datenzugriff.
 
-Vollstaendig lokal und unabhaengig: der Album-Katalog (Jahr, Titel,
+Vollständig lokal und unabhängig: der Album-Katalog (Jahr, Titel,
 Interpret) wird beim ersten Start einmalig aus der mitgelieferten Datei
 app/data/1001_albums.tsv importiert. Es gibt keine Anbindung an einen
-externen Dienst und keine Laufzeit-Netzwerkabhaengigkeit fuer die Katalogdaten.
+externen Dienst und keine Laufzeit-Netzwerkabhängigkeit für die Katalogdaten.
 Hoer-Status, Bewertung und Notiz sind rein lokale Nutzerdaten.
 """
 from __future__ import annotations
@@ -78,7 +78,7 @@ def get_conn() -> Iterator[sqlite3.Connection]:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     # WAL: gleichzeitige Lesezugriffe blockieren Schreiber nicht (kein
-    # 'database is locked' mehr bei ueberlappenden Requests).
+    # 'database is locked' mehr bei überlappenden Requests).
     conn.execute("PRAGMA journal_mode = WAL")
     conn.execute("PRAGMA busy_timeout = 5000")
     try:
@@ -110,6 +110,7 @@ VALID_SORTS = {
     "artist_asc": "c.artist ASC, c.year ASC",
     "album_asc": "c.album ASC",
     "rating_desc": "COALESCE(p.rating, 0) DESC, c.year ASC",
+    "recent": "COALESCE(p.listened_on, '') DESC, c.year ASC",
 }
 
 

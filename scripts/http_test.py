@@ -26,7 +26,7 @@ def _reset_db() -> None:
 def main() -> None:
     _reset_db()
 
-    # 'with' noetig: nur als Context-Manager fuehrt TestClient den Lifespan
+    # 'with' nötig: nur als Context-Manager fuehrt TestClient den Lifespan
     # (und damit db.init_db()) aus.
     with TestClient(app) as client:
 
@@ -37,10 +37,10 @@ def main() -> None:
         # -- Startseite rendert --
         r = client.get("/")
         assert r.status_code == 200
-        assert "gehoert" in r.text
+        assert "gehört" in r.text
         assert "1001" in r.text
 
-        # -- Suche mit '&': Redirect und Filter duerfen nicht brechen --
+        # -- Suche mit '&': Redirect und Filter dürfen nicht brechen --
         r = client.get("/", params={"q": "AC&DC"})
         assert r.status_code == 200
         assert "Keine Alben gefunden" in r.text
@@ -57,7 +57,7 @@ def main() -> None:
         assert "q=AC%26DC" in r.headers["location"], f"q nicht encodiert: {r.headers['location']}"
         assert f"#album-{first['id']}" in r.headers["location"], "Redirect-Anker fehlt"
 
-        # -- Unicode-Rating (frueher 500er durch int('²')) --
+        # -- Unicode-Rating (früher 500er durch int('²')) --
         r = client.post(
             f"/rate/{first['id']}",
             data={"listened": "", "rating": "²", "note": "",
@@ -66,7 +66,7 @@ def main() -> None:
         )
         assert r.status_code == 303, f"Unicode-Rating darf keinen 500er geben: {r.status_code}"
 
-        # -- Bewertung zuruecksetzen --
+        # -- Bewertung zurücksetzen --
         client.post(
             f"/rate/{first['id']}",
             data={"listened": "", "rating": "", "note": "",
@@ -74,7 +74,7 @@ def main() -> None:
         )
         assert db.get_album(first["id"])["listened"] == 0
 
-        # -- Ungueltige Album-ID -> 404 --
+        # -- Ungültige Album-ID -> 404 --
         r = client.post("/rate/999999", data={"listened": "on"})
         assert r.status_code == 404
 
@@ -115,8 +115,56 @@ def main() -> None:
         assert client.get("/static/app.js").status_code == 200
         assert client.get("/static/style.css").status_code == 200
 
+        # -- JSON-API des Autosave: Antwort spiegelt tatsaechlichen DB-Stand --
+        r = client.post(
+            f"/rate/{first['id']}",
+            data={"listened": "on", "rating": "5", "note": "JSON-Test",
+                  "status": "all", "q": "", "sort": "year_asc", "page": "1"},
+            headers={"Accept": "application/json"},
+        )
+        assert r.status_code == 200
+        payload = r.json()
+        assert payload["ok"] is True
+        assert payload["listened"] is True
+        assert payload["rating"] == 5
+        assert payload["note"] == "JSON-Test"
+        assert payload["listened_on"] is not None, "listened_on muss nach dem Speichern gesetzt sein"
+        assert payload["stats"]["listened"] >= 1
+
+        # Persistenz-Verifikation: zweiter read-only GET sieht den Status (kein Cache-Betrug)
+        r = client.get("/", params={"status": "listened"})
+        assert "is-listened" in r.text
+        assert "no-store" in r.headers.get("cache-control", "")
+
+        # -- Gehört-Rubrik: eigene Seite listet gehörte Alben --
+        r = client.get("/gehoert")
+        assert r.status_code == 200
+        assert "Gehörte Alben" in r.text
+        assert first["album"] in r.text
+        assert "Zuletzt gehört" in r.text
+
+        # -- Gehört-Rubrik: Suche + Sortierung + Out-of-Range --
+        r = client.get("/gehoert", params={"q": first["album"]})
+        assert r.status_code == 200 and first["album"] in r.text
+        r = client.get("/gehoert", params={"page": "999"}, follow_redirects=False)
+        assert r.status_code == 303
+        assert "page=" in r.headers["location"]
+
+        # -- Nav-Links in der Auslieferung --
+        r = client.get("/")
+        assert 'href="/gehoert"' in r.text
+
+        # -- Aufraeumen: Album 1 zurücksetzen --
+        client.post(
+            f"/rate/{first['id']}",
+            data={"listened": "", "rating": "", "note": "",
+                  "status": "all", "q": "", "sort": "year_asc", "page": "1"},
+        )
+        assert db.get_album(first["id"])["listened"] == 0
+
         print("HTTP TEST OK: Redirect-Encoding, Anker, Unicode-Rating, 404, "
-              "Out-of-Range-Redirect, Zufall, Sterne-Anzeige, Static-Assets.")
+              "Out-of-Range-Redirect, Zufall, Sterne-Anzeige, Static-Assets, "
+              "JSON-Autosave (Persistenz), Gehört-Rubrik.")
 
 
 if __name__ == "__main__":

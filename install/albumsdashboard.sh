@@ -14,8 +14,8 @@ set -euo pipefail
 REPO_URL_DEFAULT="https://github.com/HatchetMan111/1001MusicAlbumsProxmox.git"
 # jsDelivr statt raw.githubusercontent.com: manche Hosts/IP-Bereiche werden von
 # GitHubs raw-Content-CDN (Fastly) mit 400 "Invalid request" blockiert, obwohl
-# TLS/Verbindung einwandfrei funktionieren. jsDelivr ist ein unabhaengiges CDN
-# und in der Praxis zuverlaessiger erreichbar. REPO_RAW ueberschreibbar per Env.
+# TLS/Verbindung einwandfrei funktionieren. jsDelivr ist ein unabhängiges CDN
+# und in der Praxis zuverlaessiger erreichbar. REPO_RAW überschreibbar per Env.
 REPO_RAW_DEFAULT="https://cdn.jsdelivr.net/gh/HatchetMan111/1001MusicAlbumsProxmox@main"
 
 # shellcheck disable=SC2154  # "code" wird im Trap selbst per $? gesetzt
@@ -48,7 +48,7 @@ _valid_int() { # $1=Eingabe $2=Min $3=Max $4=Label
   local v
   v=$(echo "$1" | tr -cd '0-9')
   if [[ -z "$v" ]]; then
-    echo "Ungueltige Eingabe fuer $4: '$1'" >&2
+    echo "Ungültige Eingabe für $4: '$1'" >&2
     exit 1
   fi
   if (( v < $2 || v > $3 )); then
@@ -69,18 +69,18 @@ CORES=$(_valid_int "$CORES" 1 64 "vCPU-Kerne")
 RAM=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "RAM in MB:" 10 60 "1024" 3>&1 1>&2 2>&3) || exit 1
 RAM=$(_valid_int "$RAM" 256 1048576 "RAM")
 
-DISK=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Disk-Groesse in GB:" 10 60 "6" 3>&1 1>&2 2>&3) || exit 1
-DISK=$(_valid_int "$DISK" 2 1024 "Disk-Groesse")
+DISK=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Disk-Größe in GB:" 10 60 "6" 3>&1 1>&2 2>&3) || exit 1
+DISK=$(_valid_int "$DISK" 2 1024 "Disk-Größe")
 
-STORAGE=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Proxmox-Storage fuer Root-Disk:" 10 60 "local-lvm" 3>&1 1>&2 2>&3) || exit 1
+STORAGE=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Proxmox-Storage für Root-Disk:" 10 60 "local-lvm" 3>&1 1>&2 2>&3) || exit 1
 if [[ ! "$STORAGE" =~ ^[A-Za-z0-9._-]+$ ]]; then
-  echo "Ungueltiger Storage-Name: '$STORAGE'" >&2
+  echo "Ungültiger Storage-Name: '$STORAGE'" >&2
   exit 1
 fi
 
 BRIDGE=$(whiptail --backtitle "AlbumsDashboard Installer" --inputbox "Netzwerk-Bridge:" 10 60 "vmbr0" 3>&1 1>&2 2>&3) || exit 1
 if [[ ! "$BRIDGE" =~ ^[A-Za-z0-9._-]+$ ]]; then
-  echo "Ungueltiger Bridge-Name: '$BRIDGE'" >&2
+  echo "Ungültiger Bridge-Name: '$BRIDGE'" >&2
   exit 1
 fi
 
@@ -90,7 +90,7 @@ PORT=$(_valid_int "$PORT" 1 65535 "Web-UI-Port")
 REPO_URL="${REPO_URL:-$REPO_URL_DEFAULT}"
 REPO_RAW="${REPO_RAW:-$REPO_RAW_DEFAULT}"
 
-# --- LXC anlegen (oder bestehende fuer Update wiederverwenden) -------------
+# --- LXC anlegen (oder bestehende für Update wiederverwenden) -------------
 if pct status "$CTID" >/dev/null 2>&1; then
   msg "Container $CTID existiert bereits – fahre mit Update/Redeploy fort."
 else
@@ -140,7 +140,7 @@ fi
 # --- Deploy-Script in den Container laden und ausfuehren -------------------
 msg "Lade Provisionierungs-Script..."
 curl -fsSL "${REPO_RAW}/lib/deploy-albumsdashboard.sh" -o /tmp/deploy-albumsdashboard.sh \
-  || { echo "Konnte deploy-albumsdashboard.sh nicht laden. Pruefe REPO_RAW=${REPO_RAW}"; exit 1; }
+  || { echo "Konnte deploy-albumsdashboard.sh nicht laden. Prüfe REPO_RAW=${REPO_RAW}"; exit 1; }
 pct push "$CTID" /tmp/deploy-albumsdashboard.sh /root/deploy-albumsdashboard.sh
 pct exec "$CTID" -- chmod +x /root/deploy-albumsdashboard.sh
 

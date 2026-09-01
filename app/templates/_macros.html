@@ -1,0 +1,109 @@
+{% macro service_buttons(item) %}
+  <div class="links" aria-label="Streaming-Suchlinks">
+    {% for key, url in build_links(item.artist, item.album).items() %}
+      <a class="link-btn link-{{ key }}" href="{{ url }}" target="_blank" rel="noopener noreferrer">
+        {{ service_label(key) }}<span class="visually-hidden">: {{ item.album }} von {{ item.artist }}</span>
+      </a>
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{% macro stars_span(album) %}
+  <span class="stars" {% if not album.rating %}hidden{% endif %} role="img"
+        aria-label="Bewertung: {{ album.rating or 0 }} von 5 Sternen">
+    {%- for i in range(1, 6) -%}
+    <span data-star="{{ i }}" class="{{ 'star-filled' if album.rating and i <= album.rating else 'star-empty' }}" aria-hidden="true">&starf;</span>
+    {%- endfor -%}
+  </span>
+{% endmacro %}
+
+{% macro listened_date(album) %}
+  <span class="listened-date"
+        {% if not (album.listened and album.listened_on) %}hidden{% endif %}
+        {% if album.listened and album.listened_on %}title="Gehört am {{ album.listened_on }}"{% endif %}>
+    {{- album.listened_on[:10] if album.listened and album.listened_on else '' -}}
+  </span>
+{% endmacro %}
+
+{% macro stats_bar(stats) %}
+  <section class="stats" aria-label="Fortschritt">
+    <div class="stat-box">
+      <strong id="stat-listened">{{ stats.listened }}</strong> / <span id="stat-total">{{ stats.total }}</span> gehört
+      <span class="stat-percent" id="stat-percent">{{ stats.percent }}&nbsp;%</span>
+      <div class="progress-bar" role="progressbar"
+           aria-valuenow="{{ stats.percent | round(0) | int }}" aria-valuemin="0" aria-valuemax="100"
+           aria-label="{{ stats.listened }} von {{ stats.total }} Alben gehört">
+        <div class="progress-fill" id="progress-fill" style="width: {{ stats.percent }}%"></div>
+      </div>
+    </div>
+    <a href="/zufall" class="btn-primary">Vorschlag &raquo;</a>
+  </section>
+{% endmacro %}
+
+{% macro album_card(album, status, q, sort, page) %}
+  <div class="album-card {{ 'is-listened' if album.listened else '' }}" id="album-{{ album.id }}">
+    <div class="album-info">
+      <div class="album-head">
+        <h3>{{ album.album }}</h3>
+        {{ stars_span(album) }}
+      </div>
+      <p class="artist">
+        {{ album.artist }} {% if album.year %}({{ album.year }}){% endif %}
+        {{ listened_date(album) }}
+      </p>
+
+      <form action="/rate/{{ album.id }}" method="post" class="rating-form" data-autosave>
+        <input type="hidden" name="status" value="{{ status }}">
+        <input type="hidden" name="q" value="{{ q }}">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <input type="hidden" name="page" value="{{ page }}">
+
+        <label class="listened-toggle" title="Als gehört markieren">
+          <input type="checkbox" name="listened" {% if album.listened %}checked{% endif %}>
+          <span>Gehört</span>
+        </label>
+
+        <label class="visually-hidden" for="rating-{{ album.id }}">Bewertung für {{ album.album }}</label>
+        <select name="rating" id="rating-{{ album.id }}">
+          <option value="">Keine Bewertung</option>
+          {% for i in range(1, 6) %}
+          <option value="{{ i }}" {% if album.rating == i %}selected{% endif %}>{{ i }} Stern{{ "e" if i > 1 }}</option>
+          {% endfor %}
+        </select>
+
+        <label class="visually-hidden" for="note-{{ album.id }}">Notiz zu {{ album.album }}</label>
+        <input type="text" name="note" id="note-{{ album.id }}"
+               placeholder="Notiz (optional)" value="{{ album.note or '' }}">
+
+        <button type="submit" class="btn-secondary">Speichern</button>
+        <span class="save-status" role="status" aria-live="polite"></span>
+      </form>
+
+      {{ service_buttons(album) }}
+    </div>
+  </div>
+{% endmacro %}
+
+{% macro pagination(result, base, status, q, sort, window) %}
+  {% if result.pages > 1 %}
+  <nav class="pagination" aria-label="Seitennavigation">
+    {% if result.page > 1 %}
+      <a href="{{ base }}?status={{ status }}&q={{ q | urlencode }}&sort={{ sort }}&page={{ result.page - 1 }}" rel="prev">&laquo; Zurück</a>
+    {% endif %}
+
+    {% for p in window %}
+      {% if p is none %}
+        <span class="ellipsis">&hellip;</span>
+      {% elif p == result.page %}
+        <span class="page-current" aria-current="page">{{ p }}</span>
+      {% else %}
+        <a href="{{ base }}?status={{ status }}&q={{ q | urlencode }}&sort={{ sort }}&page={{ p }}">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+
+    {% if result.page < result.pages %}
+      <a href="{{ base }}?status={{ status }}&q={{ q | urlencode }}&sort={{ sort }}&page={{ result.page + 1 }}" rel="next">Weiter &raquo;</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+{% endmacro %}

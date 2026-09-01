@@ -5,19 +5,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="color-scheme" content="dark">
   <title>{% block title %}AlbumsDashboard{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="/static/style.css?v=2">
 </head>
 <body>
   <header class="topbar">
     <a class="brand" href="/">🎧 AlbumsDashboard</a>
-    <span class="tagline">1001 Alben, die man gehoert haben sollte</span>
+    <nav class="mainnav" aria-label="Hauptnavigation">
+      <a href="/" class="navlink {% if not request.url.path.startswith('/gehoert') %}active{% endif %}">Alle Alben</a>
+      <a href="/gehoert" class="navlink {% if request.url.path.startswith('/gehoert') %}active{% endif %}">Gehörte Alben</a>
+    </nav>
+    <span class="tagline">1001 Alben, die man gehört haben sollte</span>
   </header>
   <main>
     {% block content %}{% endblock %}
   </main>
   <footer>
-    <span>Vollstaendig lokal &amp; offline &ndash; keine Cloud, kein externer Dienst.</span>
+    <span>Vollständig lokal &amp; offline – keine Cloud, kein externer Dienst.</span>
   </footer>
-  <script src="/static/app.js" defer></script>
+  <script src="/static/app.js?v=2" defer></script>
 </body>
 </html>

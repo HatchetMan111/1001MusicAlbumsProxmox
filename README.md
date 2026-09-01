@@ -99,17 +99,26 @@ pct exec <CTID> -- journalctl -u albumsdashboard -n 100 --no-pager
 
 ## UX
 
+- **Eigene Rubrik „Gehörte Alben"** (`/gehoert`): Chronologie mit
+  „Zuletzt gehört zuerst", Bewertung, Notiz und Gehört-Datum, durchsuchbar
+  und sortierbar – direkt über die Navigation oben erreichbar
 - **Autosave ohne Reload** (Progressive Enhancement): Checkbox und Bewertung
-  speichern sofort per `fetch`, die Notiz entprellt; ohne JavaScript
-  funktionieren die klassischen Formulare weiterhin
+  speichern sofort per `fetch`; die Antwort enthält den **tatsächlichen
+  Datenbank-Stand**, mit dem Karte und Statistik-Leiste sofort synchronisiert
+  werden – „Gespeichert" wird also erst nach Server-Bestätigung angezeigt.
+  Ein abgehakter Haken einer Checkbox wird dabei ausdrücklich mitgesendet
+  (Browser lassen ihn sonst weg, wodurch der Status verloren ginge).
+  Ohne JavaScript funktionieren die klassischen Formulare weiterhin
+- **Cache-Busting** (`?v=2`) für JS/CSS und `Cache-Control: no-store`
+  für dynamische Seiten: keine veralteten Stände mehr im Browser
 - **Redirect-Anker:** nach dem Speichern springt die Seite direkt zur
   bearbeiteten Karte (mit kurzem Aufleuchten)
-- **Sterne-Anzeige** an jeder bewerteten Karte plus Gehoert-Datum
+- **Sterne-Anzeige** an jeder bewerteten Karte plus Gehört-Datum
 - **Kompakte Seitenzahlen-Pagination** mit Fenstern um die aktuelle Seite
 - **Filter-Dropdowns** mit Trefferzahlen und Auto-Submit, Reset-Link
-- **Barrierefreiheit:** ARIA-Labels, Fokus-Ringe fuer Tastaturnutzer,
-  Screenreader-Texte fuer Links, `prefers-reduced-motion`-Unterstuetzung
-- **Sortierung nach bester Bewertung** hinzugefuegt
+- **Barrierefreiheit:** ARIA-Labels, Fokus-Ringe für Tastaturnutzer,
+  Screenreader-Texte für Links, `prefers-reduced-motion`-Unterstützung
+- **Sortierung nach bester Bewertung** hinzugefügt
 - **Mobile:** Filter- und Notizfelder nehmen die volle Breite ein
 
 ## Was bereits getestet wurde
