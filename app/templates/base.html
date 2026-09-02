@@ -2,10 +2,18 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#12141a">
+  <meta name="description" content="Lokale Checkliste zu 1001 Albums You Must Hear Before You Die – vollständig offline, keine Cloud.">
   <title>{% block title %}AlbumsDashboard{% endblock %}</title>
-  <link rel="stylesheet" href="/static/style.css?v=3">
+  <link rel="stylesheet" href="/static/style.css?v=4">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/static/icon-192.png">
+  <link rel="apple-touch-icon" href="/static/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Albums">
 </head>
 <body>
   <header class="topbar">
@@ -22,6 +30,6 @@
   <footer>
     <span>Vollständig lokal &amp; offline – keine Cloud, kein externer Dienst.</span>
   </footer>
-  <script src="/static/app.js?v=3" defer></script>
+  <script src="/static/app.js?v=4" defer></script>
 </body>
 </html>

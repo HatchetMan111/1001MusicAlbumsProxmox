@@ -200,4 +200,13 @@
     if (coverObserver) coverObserver.observe(c);
     else loadCover(c);
   });
+
+  /* -----------------------------------------------------------------
+   * PWA: Service Worker registrieren (Offline-Shell + Installierbarkeit).
+   * Progressive Enhancement – ohne SW laeuft die App normal weiter. */
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(function () {
+      /* Registrierung fehlgeschlagen (z. B. HTTP ohne localhost): ignorieren */
+    });
+  }
 })();

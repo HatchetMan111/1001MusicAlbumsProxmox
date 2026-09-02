@@ -12,7 +12,7 @@ from typing import Any, Optional
 from urllib.parse import urlencode
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -87,6 +87,27 @@ def _no_store(response: HTMLResponse) -> HTMLResponse:
 @app.get("/healthz")
 def healthz() -> dict[str, str]:
     return {"status": "ok"}
+
+
+# --- PWA: Manifest + Service Worker aus dem Root (noetiger SW-Scope) -----
+
+SW_PATH = BASE_DIR / "static" / "sw.js"
+MANIFEST_PATH = BASE_DIR / "static" / "manifest.json"
+
+SW_HEADERS = {
+    "Cache-Control": "no-cache",
+    "Service-Worker-Allowed": "/",
+}
+
+
+@app.get("/sw.js")
+def service_worker() -> FileResponse:
+    return FileResponse(SW_PATH, media_type="application/javascript", headers=SW_HEADERS)
+
+
+@app.get("/manifest.webmanifest")
+def manifest() -> FileResponse:
+    return FileResponse(MANIFEST_PATH, media_type="application/manifest+json")
 
 
 @app.get("/", response_class=HTMLResponse)

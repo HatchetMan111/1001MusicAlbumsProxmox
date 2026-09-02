@@ -126,6 +126,28 @@ def main() -> None:
         assert "data-artist=" in r.text and "data-album=" in r.text
         assert "itunes.apple.com" not in r.text, "Server darf keine Cover-URLs ausliefern (Offline-Prinzip)"
 
+        # -- PWA: Manifest, Service Worker und Icons ---------------------------
+        r = client.get("/manifest.webmanifest")
+        assert r.status_code == 200
+        assert "manifest+json" in r.headers["content-type"]
+        assert "AlbumsDashboard" in r.text
+        assert "512x512" in r.text, "Manifest braucht 512er-Icon (Install-Kriterium)"
+
+        r = client.get("/sw.js")
+        assert r.status_code == 200
+        assert "javascript" in r.headers["content-type"]
+        assert "albumsdashboard" in r.text
+        assert r.headers.get("service-worker-allowed") == "/", "SW-Scope-Header fehlt"
+
+        assert client.get("/static/icon-192.png").status_code == 200
+        assert client.get("/static/icon-512.png").status_code == 200
+
+        # PWA-Meta in der Startseite verankert
+        r = client.get("/")
+        assert 'rel="manifest"' in r.text
+        assert 'theme-color' in r.text
+        assert 'apple-touch-icon' in r.text
+
         # -- Autosave-JS und CSS werden ausgeliefert --
         assert client.get("/static/app.js").status_code == 200
         assert client.get("/static/style.css").status_code == 200

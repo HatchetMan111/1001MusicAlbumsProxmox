@@ -99,6 +99,14 @@ pct exec <CTID> -- journalctl -u albumsdashboard -n 100 --no-pager
 
 ## UX
 
+- **Progressive Web App:** Manifest, Service Worker (Offline-Shell) und
+  Icons (192/512 px, maskable) – auf Smartphone/Tablet als eigene App
+  installierbar („Zum Home-Bildschirm hinzufügen" / Android-Install-Prompt).
+  Dynamische Seiten werden nie aus dem SW-Cache ausgeliefert, damit der
+  Hör-Fortschritt immer frisch ist; statische Assets versioniert (Cache-Busting).
+  iOS-Safe-Areas (Notch, Home-Indikator) werden respektiert
+- **Mobile-Cover optimiert:** festes 84-px-Quadrat mit Schatten und runden
+  Ecken (statt gestreckter Streifen) – Karten bleiben kompakt und lesbar
 - **Filter-Tabs über der Liste:** „Alle / Noch offen / Gehört" mit
   Trefferzahlen – ein Klick zeigt z. B. nur die Alben, die man noch
   nicht gehört hat

@@ -233,6 +233,24 @@ h2 { border-left: 4px solid var(--accent); padding-left: 10px; }
 .cover-placeholder { color: var(--muted); font-size: 2rem; opacity: 0.5; }
 .cover-note-icon { display: block; }
 
+/* --- Mobile: Cover als sauberes Quadrat (kein gestreckter Streifen) --- */
+@media (max-width: 600px) {
+  .album-card { padding: 12px; }
+  .album-cover {
+    flex: 0 0 84px;
+    width: 84px;
+    height: 84px;            /* festes Quadrat statt Vollhöhen-Streifen */
+    min-height: 84px;
+    aspect-ratio: 1 / 1;
+    align-self: flex-start;  /* nicht auf Kartenhöhe strecken */
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+    flex-shrink: 0;
+  }
+  .album-info { padding: 0 0 0 4px; min-width: 0; }
+  .cover-placeholder { font-size: 1.6rem; }
+}
+
 .album-head {
   display: flex;
   justify-content: space-between;
@@ -383,10 +401,24 @@ footer { text-align: center; padding: 20px; color: var(--muted); font-size: 0.8r
   .stats { flex-direction: column; align-items: stretch; }
   .stats .btn-primary { text-align: center; }
   .album-head h3 { font-size: 1rem; }
-  .album-cover { flex-basis: 72px; width: 72px; }
   .filter-tabs { gap: 6px; }
   .filter-tab { padding: 7px 12px; font-size: 0.85rem; }
 }
+
+/* --- PWA / iOS-Safe-Areas (Notch, Home-Indicator) ------------------------- */
+@supports (padding: max(0px)) {
+  .topbar {
+    padding-left: max(14px, env(safe-area-inset-left));
+    padding-right: max(14px, env(safe-area-inset-right));
+    padding-top: max(12px, env(safe-area-inset-top));
+  }
+  footer {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+
+/* PWA: verhindert Bounce-Overlays hinter der dunklen UI */
+html { background: var(--bg); }
 
 /* --- Reduced Motion: Animationen abschalten ------------------------------- */
 @media (prefers-reduced-motion: reduce) {

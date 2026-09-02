@@ -1,0 +1,33 @@
+{
+  "name": "AlbumsDashboard – 1001 Alben",
+  "short_name": "AlbumsDashboard",
+  "description": "Lokale Checkliste zu 1001 Albums You Must Hear Before You Die – gehört, bewertet, entdeckt. Vollständig lokal, keine Cloud.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#12141a",
+  "theme_color": "#12141a",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
